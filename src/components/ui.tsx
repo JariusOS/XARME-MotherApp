@@ -2,12 +2,13 @@
 import { useId } from "react";
 import type { ReactNode, SVGProps } from "react";
 
+/** Official XARME mark (Drive: XARME BRAND/Logo/SVG/svg-1.svg). */
 export function Logo(p: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 64 64" fill="none" aria-label="Xarme" {...p}>
-      <path d="M4 4h56v5H4z" fill="currentColor" />
-      <path d="M44 9h9L20 60h-9z" fill="currentColor" />
-      <path d="M12 9h9l33 51h-9z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
+    <svg viewBox="800 780 480 510" fill="none" aria-label="Xarme" role="img" {...p}>
+      <path fillRule="evenodd" clipRule="evenodd" fill="currentColor" d="M1026.07 1017.81L1027.91 1015.46L1092.48 1018.88L1091.26 1020.27C1088.51 1023.4 1088.34 1028.05 1090.87 1031.37L1267.94 1264.76C1272.33 1270.55 1268.21 1278.86 1260.95 1278.86H1132.55C1129.82 1278.86 1127.25 1277.58 1125.58 1275.42L1016.92 1133.78C1013.55 1129.39 1007 1129.17 1003.35 1133.33L878.228 1275.87C876.56 1277.77 874.154 1278.86 871.626 1278.86H820.213C812.659 1278.86 808.627 1269.95 813.609 1264.28L970.719 1085.25C971.26 1084.64 971.702 1083.96 972.042 1083.25L992.905 1060.13L1004.2 1045.72L1146.21 1230.82C1147.88 1232.98 1150.45 1234.25 1153.18 1234.25H1172.58C1179.84 1234.25 1183.96 1225.94 1179.57 1220.16L1026.07 1017.81Z" />
+      <path d="M1225.61 806.492L1031.92 1055.99L838.232 806.492L1225.61 806.492Z" stroke="currentColor" strokeWidth="46.9156" />
+      <rect x="1011.46" y="815.796" width="40.9487" height="212.933" fill="currentColor" />
     </svg>
   );
 }
