@@ -5,7 +5,7 @@ import Segmented from "@/components/Segmented";
 import { dec, short } from "@/components/format";
 import { Gema, Sim, Xeet } from "@/components/ui";
 
-const END = Date.parse("2027-01-07T00:00:00Z");
+const END = Date.parse("2027-06-30T00:00:00Z");
 type Row = { rank: number; userId: string; username: string; wallet: string | null; xeet: number; gema: number; simulated: boolean };
 type Board = { by: "xeet" | "gema"; rows: Row[]; me: Row | null; myId: string | null };
 const TILE = ["#0f172a", "#0f766e", "#7c2d12", "#312e81", "#14532d", "#4a044e", "#1e3a8a", "#713f12"];
@@ -39,7 +39,7 @@ export default function Endgame() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-[15px] text-muted">Snapshot: January 7, 2027 · 00:00 UTC</p>
+        <p className="mt-4 text-[15px] text-muted">Snapshot: June 30, 2027 · 00:00 UTC</p>
       </section>
 
       <div className="mt-8">

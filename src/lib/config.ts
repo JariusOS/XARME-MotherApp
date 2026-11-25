@@ -12,7 +12,7 @@ export const RULES = {
   likesPerGema: 10_000,
   snapshotHours: 6,
   leaderboardSize: 300,
-  endgame: "2027-01-07T00:00:00Z",
+  endgame: "2027-06-30T00:00:00Z",
 } as const;
 
 export const seedSimulated =
@@ -31,5 +31,6 @@ export const MINT = {
   reserve: 250, // FCFS, costs reserveCost XEET
   creator: 20,
   reserveCost: 1000,
+  maxPerWallet: 2, // guaranteed + reserved spots combined
   opensAt: RULES.endgame,
 } as const;

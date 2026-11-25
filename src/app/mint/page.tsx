@@ -5,7 +5,6 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR, { mutate } from "swr";
-import SignArt from "@/components/SignArt";
 import { dec, short } from "@/components/format";
 import { post, useMe } from "@/components/hooks";
 import { Sim, Xeet } from "@/components/ui";
@@ -16,9 +15,16 @@ type Mint = {
   onchain: boolean;
   me: null | {
     xeet: number; wallet: string | null; rank: number | null; projectedGtd: boolean; reservedSpot: boolean;
-    reservedAt: string | null; canReserve: boolean; eligible: boolean; xeetNeeded: number;
+    myReserved: number; maxReserves: number; atLimit: boolean; totalSpots: number;
+    canReserve: boolean; eligible: boolean; xeetNeeded: number;
   };
 };
+
+const ART = [
+  { n: 17, name: "No Parking", file: "017-no-parking.svg" },
+  { n: 19, name: "No Skating", file: "019-no-skating.svg" },
+  { n: 34, name: "No Magnets", file: "034-no-magnets.svg" },
+];
 
 export default function MintPage() {
   const { data, isLoading } = useSWR<Mint>("/api/mint", { refreshInterval: 15_000 });
@@ -58,10 +64,10 @@ export default function MintPage() {
   if (data) {
     if (!user) cta = { label: "Sign in with X to check eligibility", action: () => { location.href = "/api/auth/x/login"; } };
     else if (!me?.wallet) cta = { label: "Link a Solana wallet", action: () => { location.href = "/wallet"; } };
-    else if (me.reservedSpot) cta = { label: "Spot reserved ✓", disabled: true };
+    else if (me.atLimit) cta = { label: `${me.totalSpots}/2 spots held ✓ (max per wallet)`, disabled: true };
     else if (left <= 0) cta = { label: "Reserve spots sold out", disabled: true };
     else if (me.xeetNeeded > 0) cta = { label: `Need ${dec(me.xeetNeeded)} more XEET`, action: () => { location.href = "/"; } };
-    else cta = { label: busy ? "Waiting for signature…" : `Sign & reserve for ${c!.reserveCost} XEET`, action: doReserve, disabled: busy };
+    else cta = { label: busy ? "Waiting for signature…" : `Sign & reserve${me.myReserved ? " another" : ""} for ${c!.reserveCost} XEET`, action: doReserve, disabled: busy };
   }
 
   return (
@@ -79,9 +85,9 @@ export default function MintPage() {
             <>
               <div className="font-display text-xl font-bold text-mint">You are eligible</div>
               <div className="mt-1 text-sm text-muted">
-                {me.reservedSpot ? "Reserved spot (FCFS). Free mint at ENDGAME." :
-                  `Projected guaranteed: you're #${me.rank} in XEET. Stay top ${c!.gtd} at the ENDGAME snapshot.`}
-                {me.reservedSpot && me.projectedGtd && ` You're also projected top ${c!.gtd}.`}
+                {me.myReserved > 0 && `${me.myReserved} reserved spot${me.myReserved > 1 ? "s" : ""}. `}
+                {me.projectedGtd && `Projected guaranteed: you're #${me.rank} in XEET. Stay top ${c!.gtd} at the snapshot. `}
+                You hold {me.totalSpots}/2 spots (max per wallet).
               </div>
             </>
           ) : (
@@ -98,11 +104,14 @@ export default function MintPage() {
       {/* hero */}
       <section className="mt-8 text-center">
         <div className="mx-auto grid max-w-sm grid-cols-3 gap-2">
-          <SignArt seed={7} className="col-span-2 row-span-2 h-full w-full rounded-3xl" />
-          <SignArt seed={33} className="w-full rounded-2xl" />
-          <SignArt seed={250} className="w-full rounded-2xl" />
+          {ART.map((a, i) => (
+            <figure key={a.file} className={`relative rounded-3xl bg-surface p-3 ${i === 0 ? "col-span-2 row-span-2 p-6" : ""}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/signs/${a.file}`} alt={`SIGNS #${a.n}: ${a.name}`} className="aspect-square w-full" />
+              <figcaption className="num absolute bottom-2 left-3 text-[10px] text-muted">#{a.n}</figcaption>
+            </figure>
+          ))}
         </div>
-        <div className="mt-3"><Sim>PLACEHOLDER ART</Sim></div>
         <h1 className="mt-6 font-display text-[clamp(40px,13vw,72px)] font-bold leading-none tracking-tight">SIGNS</h1>
         <p className="mt-2 text-[17px] text-muted"><span className="num text-ink">303</span> signs · free mint on Solana</p>
 
@@ -132,8 +141,8 @@ export default function MintPage() {
           <div className="bg-faint" style={{ width: `${(20 / 303) * 100}%` }} />
         </div>
         <ul className="mt-5 space-y-4 text-[15px]">
-          <Alloc color="bg-gold" n={33} title="Guaranteed free mint" body={<>Top 33 XEET holders at the ENDGAME snapshot (Jan 7, 2027 00:00 UTC). <Link href="/endgame" className="text-ink underline">See the board</Link></>} />
-          <Alloc color="bg-brand" n={250} title="Reserve, first come first served" body={<>Costs 1,000 XEET, signed with your Solana wallet. <span className="text-ink">{left}</span> left.</>} />
+          <Alloc color="bg-gold" n={33} title="Guaranteed free mint" body={<>Top 33 XEET holders at the ENDGAME snapshot (Jun 30, 2027 00:00 UTC). <Link href="/endgame" className="text-ink underline">See the board</Link></>} />
+          <Alloc color="bg-brand" n={250} title="Reserve, first come first served" body={<>1,000 XEET per spot, signed with your Solana wallet. <span className="text-ink">{left}</span> left.</>} />
           <Alloc color="bg-faint" n={20} title="Creator reserve" body="Held by the Xarme team." />
         </ul>
       </section>
@@ -142,8 +151,9 @@ export default function MintPage() {
         <h3 className="font-display text-lg font-semibold text-ink">How it works</h3>
         <ol className="mt-3 list-decimal space-y-2 pl-5">
           <li>Sign in with X and link a Solana wallet. The linked wallet is where your SIGN mints.</li>
-          <li>Reserving spends 1,000 XEET. It&apos;s one spot per account and can&apos;t be refunded.</li>
-          <li>Guaranteed spots go to the top 33 XEET balances <em>after</em> reservations are paid, at the snapshot.</li>
+          <li>Two routes: <span className="text-ink">reserve</span> (spends 1,000 XEET per spot, no refunds) or <span className="text-ink">stack XEET</span> to finish top 33 at the snapshot (costs nothing). Reserving lowers your balance, so it can cost you a top-33 place.</li>
+          <li>Max 2 per wallet, guaranteed and reserved combined. Top holders can also reserve one.</li>
+          <li>If you end in the top 33 already holding 2 reserves, you still get 2 total; the extra guaranteed spot passes down the board.</li>
           <li>The free mint opens at ENDGAME. You pay only Solana network fees.</li>
         </ol>
         {!data?.onchain && <p className="mt-4"><Sim>MINT PROGRAM NOT DEPLOYED</Sim> <span className="ml-1">Reservations are recorded off-chain with your wallet signature.</span></p>}
