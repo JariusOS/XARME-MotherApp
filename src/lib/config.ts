@@ -22,3 +22,14 @@ export const seedSimulated =
 const floor4 = (n: number) => Math.floor(n * 10_000) / 10_000;
 export const xeetFor = (impressions: number) => floor4(impressions / RULES.impressionsPerXeet);
 export const gemaFor = (likes: number) => floor4(likes / RULES.likesPerGema);
+
+/** SIGNS NFT collection (free mint on Solana). */
+export const MINT = {
+  name: "SIGNS",
+  total: 303,
+  gtd: 33, // top XEET holders at the ENDGAME snapshot
+  reserve: 250, // FCFS, costs reserveCost XEET
+  creator: 20,
+  reserveCost: 1000,
+  opensAt: RULES.endgame,
+} as const;

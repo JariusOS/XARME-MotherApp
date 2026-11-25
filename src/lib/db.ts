@@ -53,6 +53,14 @@ create table if not exists ledger (
   created_at timestamptz not null default now()
 );
 create index if not exists ledger_user on ledger(user_id, created_at);
+create table if not exists mint_reservations (
+  user_id uuid primary key references users(id),  -- one reservation per user
+  wallet text not null unique,
+  xeet_spent numeric(24,4) not null,
+  message text not null,
+  signature text not null,
+  created_at timestamptz not null default now()
+);
 create index if not exists users_xeet on users(xeet desc);
 create index if not exists users_gema on users(gema desc);
 `;
