@@ -4,6 +4,7 @@ import useSWR from "swr";
 export type Me = {
   id: string; username: string; name: string | null; avatar: string | null; wallet: string | null;
   xeet: number; gema: number; simulated: boolean; minesToday: number; dailyMines: number;
+  windowHours: number; nextFreeAt: string | null; boostLeft: number; multiplier: number; slotLevel: number; cooldownLevel: number;
 };
 export type Status = {
   mode: { xAuth: "real" | "simulated"; xData: "real" | "simulated"; database: "postgres" | "embedded" | "ephemeral" };

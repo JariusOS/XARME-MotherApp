@@ -9,9 +9,10 @@ export default function Market() {
   const [tier, setTier] = useState<Tier | "all">("all");
   const [theme, setTheme] = useState<string>("all");
   const [q, setQ] = useState("");
+  const [ring, setRing] = useState<string>("all");
   const list = useMemo(() => SIGNS.filter((s) =>
-    (tier === "all" || s.tier === tier) && (theme === "all" || s.theme === theme) &&
-    (!q || s.name.toLowerCase().includes(q.toLowerCase()) || String(s.n) === q.replace("#", ""))), [tier, theme, q]);
+    (tier === "all" || s.tier === tier) && (theme === "all" || s.theme === theme) && (ring === "all" || s.ring === ring) &&
+    (!q || s.name.toLowerCase().includes(q.toLowerCase()) || String(s.n) === q.replace("#", ""))), [tier, theme, ring, q]);
 
   return (
     <div className="rise">
@@ -35,6 +36,13 @@ export default function Market() {
       <div className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
         <Chip on={theme === "all"} onClick={() => setTheme("all")} small>Any theme</Chip>
         {THEMES.map((t) => <Chip key={t} on={theme === t} onClick={() => setTheme(t)} small>{t}</Chip>)}
+      </div>
+      <div className="mt-2 flex gap-2">
+        {[["all", "Any frame"], ["Black ring", `Black ring ${count("ring", "Black ring")}`], ["No ring", `No ring ${count("ring", "No ring")}`]].map(([v, l]) => (
+          <Chip key={v} on={ring === v} onClick={() => setRing(v)} small>
+            {v !== "all" && <span className={`h-3 w-3 rounded-full ${v === "Black ring" ? "border-[3px] border-black bg-loss" : "bg-loss"}`} />}{l}
+          </Chip>
+        ))}
       </div>
 
       <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4">

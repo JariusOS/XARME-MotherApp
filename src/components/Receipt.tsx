@@ -9,6 +9,8 @@ export type MineResult = {
   xeet: number;
   gema: number;
   minesToday: number;
+  slots: number;
+  boost: number;
 };
 
 /** Post-mine receipt, after the MotherApp "Sniped" card. */
@@ -40,7 +42,8 @@ export default function Receipt({ r, onClose }: { r: MineResult; onClose: () => 
             <Row k="XEET" v={<span className="flex items-center gap-2"><Xeet className="h-6 w-6" /><span className="num font-bold">{dec(r.xeet, 4)}</span></span>} />
             <Row k="gema" v={<span className="flex items-center gap-2"><Gema className="h-6 w-6" /><span className="num font-bold">{dec(r.gema, 4)}</span></span>} />
             <Row k="Status" v={<span className="font-black text-lime-400">SUCCESS</span>} />
-            <Row k="Today" v={<span className="num">{r.minesToday}/3 mines</span>} />
+            <Row k="Boost" v={<span className={`num rounded-lg px-3 py-0.5 ${r.boost > 1 ? "bg-gold font-bold text-bg" : "bg-raised"}`}>{r.boost}x</span>} />
+            <Row k="Slots used" v={<span className="num">{r.minesToday}/{r.slots}</span>} />
           </dl>
           {r.post.source === "simulated" && <div className="mt-4 text-center"><Sim>SIMULATED METRICS</Sim></div>}
           <div className="mt-6 flex items-center justify-between border-t border-white/20 pt-4">

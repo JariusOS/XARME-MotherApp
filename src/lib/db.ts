@@ -53,6 +53,13 @@ create table if not exists ledger (
   created_at timestamptz not null default now()
 );
 create index if not exists ledger_user on ledger(user_id, created_at);
+alter table mines add column if not exists boost numeric(6,3) not null default 1;
+create table if not exists powerups (
+  user_id uuid primary key references users(id),
+  slot_level int not null default 0 check (slot_level between 0 and 3),
+  cooldown_level int not null default 0 check (cooldown_level between 0 and 3),
+  boost_left int not null default 0 check (boost_left >= 0)
+);
 create table if not exists signs_reservations (
   id bigserial primary key,
   user_id uuid not null references users(id),

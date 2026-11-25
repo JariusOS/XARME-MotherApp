@@ -2,9 +2,10 @@
 import { useEffect, useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
 import LiveLine from "@/components/LiveLine";
+import { PowerupsButton } from "@/components/Powerups";
 import Receipt, { type MineResult } from "@/components/Receipt";
 import Segmented from "@/components/Segmented";
-import { ago, compact, dec, hms, untilUtcMidnight } from "@/components/format";
+import { ago, compact, dec, hms } from "@/components/format";
 import { post, useMe } from "@/components/hooks";
 import { Gema, Sim, Xeet } from "@/components/ui";
 
@@ -28,8 +29,8 @@ export default function Discover() {
   const [msg, setMsg] = useState<{ tone: "err" | "ok"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<MineResult | null>(null);
-  const [left, setLeft] = useState(untilUtcMidnight());
-  useEffect(() => { const t = setInterval(() => setLeft(untilUtcMidnight()), 1000); return () => clearInterval(t); }, []);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
 
   const list = useMemo(() => {
     const ps = [...(data?.posts ?? [])];
@@ -41,8 +42,10 @@ export default function Discover() {
   const n = Math.min(Math.max(1, rank), Math.max(1, open.length));
   const target = checked ?? open[n - 1] ?? null;
 
-  const remaining = me ? me.dailyMines - me.minesToday : 3;
-  const blocked = !me ? "Sign in with X to mine" : !me.wallet ? "Link a wallet to mine" : remaining <= 0 ? "No mines left today" : null;
+  const slots = me?.dailyMines ?? 3;
+  const remaining = me ? Math.max(0, me.dailyMines - me.minesToday) : 3;
+  const freeIn = me?.nextFreeAt ? Math.max(0, Date.parse(me.nextFreeAt) - now) : null;
+  const blocked = !me ? "Sign in with X to mine" : !me.wallet ? "Link a wallet to mine" : remaining <= 0 ? "All slots used" : null;
 
   async function check() {
     setMsg(null);
@@ -124,8 +127,13 @@ export default function Discover() {
         {msg && <p className={`mt-3 text-sm ${msg.tone === "err" ? "text-loss" : "text-mint"}`}>{msg.text}</p>}
 
         <div className="mt-4 flex items-center justify-center gap-3 text-sm text-muted">
-          <span className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className={`h-2 w-5 rounded-full ${i < remaining ? "bg-brand" : "bg-line"}`} />)}</span>
-          <span><span className="num text-ink">{remaining}</span>/3 mines left · resets <span className="num">{hms(left)}</span></span>
+          <span className="flex gap-1">{Array.from({ length: slots }, (_, i) => <span key={i} className={`h-2 w-5 rounded-full ${i < remaining ? "bg-brand" : "bg-line"}`} />)}</span>
+          <span>
+            <span className="num text-ink">{remaining}</span>/{slots} slots
+            {freeIn !== null ? <> · next in <span className="num">{hms(freeIn)}</span></> : <> · {me?.windowHours ?? 24}h window</>}
+            {me && me.boostLeft > 0 && <span className="ml-1 font-semibold text-gold">· {me.multiplier}x ×{me.boostLeft}</span>}
+          </span>
+          <PowerupsButton active={!!me && me.boostLeft > 0} />
         </div>
       </section>
 

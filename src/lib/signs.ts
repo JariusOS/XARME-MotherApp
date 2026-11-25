@@ -1,6 +1,6 @@
 import data from "@/data/signs.json";
 
-export type Sign = { n: number; name: string; class: string; tier: Tier; theme: string; series: string };
+export type Sign = { n: number; name: string; class: string; tier: Tier; theme: string; series: string; ring: "Black ring" | "No ring" };
 export type Tier = "Legendary" | "Prototype" | "Rare" | "Uncommon" | "Common";
 
 /** SIGNS collection (#1–300 + 3 prototypes). Traits derived from each SVG's colour + name. */

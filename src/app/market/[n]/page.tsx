@@ -20,6 +20,7 @@ export default function SignDetail({ params }: { params: { n: string } }) {
   const traits: [string, string, number][] = [
     ["Tier", s.tier, count("tier", s.tier)],
     ["Class", s.class, count("class", s.class)],
+    ["Frame", s.ring, count("ring", s.ring)],
     ["Theme", s.theme, count("theme", s.theme)],
     ["Series", s.series, count("series", s.series)],
   ];
@@ -46,7 +47,7 @@ export default function SignDetail({ params }: { params: { n: string } }) {
         <span className="mt-1 flex-none rounded-full px-3 py-1 text-xs font-bold text-bg" style={{ background: t.color }}>{t.label}</span>
       </div>
 
-      <section className="mt-5 grid grid-cols-2 gap-2">
+      <section className="mt-5 grid grid-cols-2 gap-2 [&>*:last-child:nth-child(odd)]:col-span-2">
         {traits.map(([k, v, c]) => (
           <div key={k} className="rounded-2xl bg-surface p-3.5">
             <div className="text-[11px] uppercase tracking-wider text-muted">{k}</div>

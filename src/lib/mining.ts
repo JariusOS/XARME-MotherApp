@@ -1,23 +1,25 @@
 import "server-only";
 import { RULES, gemaFor, xeetFor } from "./config";
 import { db } from "./db";
+import { MineError } from "./mining-error";
+import { loadout } from "./powerups";
 import { XError, getPost, getPosts, type PostMetrics } from "./x";
 
-export class MineError extends Error {
-  constructor(message: string, public code: string, public status = 400) {
-    super(message);
-  }
-}
+export { MineError };
 
-const UTC_DAY_START = "date_trunc('day', now() at time zone 'utc') at time zone 'utc'";
+/** Mines in the user's rolling window (24h by default; shortened by the Cooldown powerup). */
+const IN_WINDOW = "mined_at > now() - make_interval(hours => $2)";
 
-export async function minesToday(userId: string): Promise<number> {
+export async function mineQuota(userId: string) {
   const { q } = await db();
-  const [r] = await q<{ n: number }>(
-    `select count(*)::int as n from mines where user_id = $1 and mined_at >= ${UTC_DAY_START}`,
-    [userId],
+  const lo = await loadout(q, userId);
+  const [r] = await q<{ n: number; oldest: string | null }>(
+    `select count(*)::int as n, min(mined_at) as oldest from mines where user_id = $1 and ${IN_WINDOW}`,
+    [userId, lo.windowHours],
   );
-  return r.n;
+  // next slot frees up when the oldest mine in the window ages out
+  const nextFreeAt = r.n >= lo.slots && r.oldest ? new Date(new Date(r.oldest).getTime() + lo.windowHours * 3600_000).toISOString() : null;
+  return { used: r.n, ...lo, nextFreeAt };
 }
 
 /**
@@ -40,7 +42,7 @@ export async function minePost(userId: string, tweetId: string) {
       "ineligible",
     );
   }
-  const xeet = xeetFor(post.impressions);
+  const baseXeet = xeetFor(post.impressions);
   const gema = gemaFor(post.likes);
 
   const { tx } = await db();
@@ -52,22 +54,26 @@ export async function minePost(userId: string, tweetId: string) {
     if (!user) throw new MineError("Account not found.", "auth", 401);
     if (!user.wallet) throw new MineError("Connect your Solana wallet to mine.", "wallet_required", 403);
 
+    const lo = await loadout(q, userId);
     const [{ n }] = await q<{ n: number }>(
-      `select count(*)::int as n from mines where user_id = $1 and mined_at >= ${UTC_DAY_START}`,
-      [userId],
+      `select count(*)::int as n from mines where user_id = $1 and ${IN_WINDOW}`,
+      [userId, lo.windowHours],
     );
-    if (n >= RULES.dailyMines) {
-      throw new MineError("Daily limit reached: 3 mines per UTC day.", "daily_limit", 429);
+    if (n >= lo.slots) {
+      throw new MineError(`All ${lo.slots} slots used. A slot frees up within ${lo.windowHours}h.`, "daily_limit", 429);
     }
+    const boost = lo.multiplier;
+    const xeet = Math.floor(baseXeet * boost * 1e4) / 1e4;
+    if (boost > 1) await q("update powerups set boost_left = boost_left - 1 where user_id = $1", [userId]);
 
     const inserted = await q(
       `insert into mines (tweet_id, user_id, author_username, author_name, author_avatar, text,
          posted_at, impressions_at_mine, likes_at_mine, xeet_extracted, gema_extracted,
-         latest_impressions, latest_likes, data_source)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$8,$9,$12)
+         latest_impressions, latest_likes, data_source, boost)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$8,$9,$12,$13)
        on conflict (tweet_id) do nothing returning tweet_id`,
       [post.id, userId, post.authorUsername, post.authorName, post.authorAvatar, post.text,
-        post.postedAt, post.impressions, post.likes, xeet, gema, post.source],
+        post.postedAt, post.impressions, post.likes, xeet, gema, post.source, boost],
     );
     if (inserted.length === 0) {
       throw new MineError("Already mined. Each post can only be mined once.", "already_mined", 409);
@@ -82,7 +88,7 @@ export async function minePost(userId: string, tweetId: string) {
     await q("insert into snapshots (tweet_id, impressions, likes) values ($1,$2,$3)", [
       post.id, post.impressions, post.likes,
     ]);
-    return { post, xeet, gema, minesToday: n + 1 };
+    return { post, xeet, gema, boost, minesToday: n + 1, slots: lo.slots };
   });
 }
 
