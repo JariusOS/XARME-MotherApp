@@ -11,7 +11,7 @@ Mine social attention from viral X posts. Mobile-first Next.js app with Solana w
 | Each post mined exactly once, first come first served | `mines.tweet_id` is the primary key |
 | 1 XEET per 1M impressions, 1 GEMA per 10k likes (rounded **down** to 4 dp) | `src/lib/config.ts` |
 | Balances never negative | `CHECK (xeet >= 0)`, `CHECK (gema >= 0)` + append-only `ledger` |
-| Impressions re-tracked every 6h | `/api/cron/snapshot` (Vercel cron in `vercel.json`) |
+| Impressions re-tracked every 6h | `/api/cron/snapshot`. Vercel Hobby allows only daily crons, so `vercel.json` runs it daily; use Pro (`0 */6 * * *`) or an external scheduler for 6h |
 | ENDGAME: 2027-01-07 00:00 UTC; top 300 XEET and top 300 GEMA | `src/app/endgame` |
 
 Dashboard: **potential XEET** = latest impressions ÷ 1M. **XEET lost by mining early** = potential − extracted.
