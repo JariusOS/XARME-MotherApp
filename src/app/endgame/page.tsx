@@ -16,12 +16,16 @@ export default function Endgame() {
   const [by, setBy] = useState<"xeet" | "gema">("xeet");
   const { data, isLoading } = useSWR<Board>(`/api/leaderboard?by=${by}`, { refreshInterval: 30_000 });
   const myRef = useRef<HTMLElement>(null);
+  const [limit, setLimit] = useState(33);
 
   const ms = now === null ? null : Math.max(0, END - now);
   const parts = ms === null ? ["--", "--", "--", "--"] : [
     Math.floor(ms / 86_400_000), Math.floor((ms / 3_600_000) % 24), Math.floor((ms / 60_000) % 60), Math.floor((ms / 1000) % 60),
   ].map((v) => String(v).padStart(2, "0"));
   const meInTop = !!data?.me && data.rows.some((r) => r.userId === data.myId);
+  const visible = data?.rows.slice(0, limit) ?? [];
+  const meVisible = !!data?.me && visible.some((r) => r.userId === data.myId);
+  const nextLimit = limit === 33 ? 133 : limit + 100;
   const top = data?.rows[0];
 
   return (
@@ -54,7 +58,7 @@ export default function Endgame() {
         <span className="text-brand">{by.toUpperCase()}</span>
       </h1>
       {data?.me ? (
-        <button onClick={() => myRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+        <button onClick={() => setTimeout(() => myRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0)}
           className="mt-5 h-16 w-full rounded-full bg-brand font-display text-xl font-semibold text-white hover:bg-brand-2">
           You&apos;re #{data.me.rank}{!meInTop && " (outside top 300)"} · jump to you
         </button>
@@ -67,9 +71,33 @@ export default function Endgame() {
 
       <section className="mt-8 space-y-3">
         {isLoading && [0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-3xl bg-surface" />)}
-        {data?.rows.map((r) => (
-          <RankCard key={r.userId} r={r} by={by} mine={r.userId === data.myId} refEl={r.userId === data.myId ? myRef : undefined} />
+        {visible.map((r, i) => (
+          <div key={r.userId}>
+            <RankCard r={r} by={by} mine={r.userId === data!.myId} refEl={r.userId === data!.myId ? myRef : undefined} />
+            {i === 32 && (
+              <div className="my-5 flex items-center gap-3" role="separator">
+                <span className="h-px flex-1 border-t border-dashed border-gold/50" />
+                <span className="font-pixel text-[11px] text-gold">TOP 33 · FREE SIGN AT ENDGAME</span>
+                <span className="h-px flex-1 border-t border-dashed border-gold/50" />
+              </div>
+            )}
+          </div>
         ))}
+        {data && data.rows.length > limit && (
+          <button onClick={() => setLimit(Math.min(nextLimit, data.rows.length))}
+            className="w-full rounded-full bg-surface py-3.5 font-display font-semibold hover:bg-raised">
+            See more · to #{Math.min(nextLimit, data.rows.length)}
+          </button>
+        )}
+        {data && limit > 33 && (
+          <button onClick={() => setLimit(33)} className="w-full py-2 text-sm text-muted hover:text-ink">Collapse to top 33</button>
+        )}
+        {data?.me && !meVisible && meInTop && (
+          <>
+            <div className="py-1 text-center text-faint">···</div>
+            <RankCard r={data.me} by={by} mine refEl={myRef} />
+          </>
+        )}
         {data?.me && !meInTop && (
           <>
             <div className="py-1 text-center text-faint">···</div>

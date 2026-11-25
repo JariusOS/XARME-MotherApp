@@ -138,7 +138,7 @@ export default function Discover() {
       {/* ranked list */}
       <section className="mt-10 space-y-3">
         <div className="flex items-center justify-between px-1">
-          <h2 className="font-display text-lg font-semibold">Posts over 1M impressions</h2>
+          <h2 className="font-display text-lg font-semibold">$Tweets Recently mined</h2>
           {data?.posts[0]?.source === "simulated" && <Sim>SIMULATED FEED</Sim>}
         </div>
         {isLoading && [0, 1, 2].map((i) => <div key={i} className="h-32 animate-pulse rounded-3xl bg-surface" />)}

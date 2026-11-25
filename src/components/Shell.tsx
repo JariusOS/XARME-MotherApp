@@ -10,6 +10,7 @@ const TABS = [
   { href: "/", label: "Discover", icon: "M12 3v18M3 12h18M5 5h14v14H5z" },
   { href: "/endgame", label: "ENDGAME", icon: "M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 3M17 6h3a3 3 0 0 1-3 3" },
   { href: "/mint", label: "Mint", icon: "M4 4h16v16H4zM4 15l5-5 4 4 3-3 4 4" },
+  { href: "/market", label: "Market", icon: "M3 9l1.5-5h15L21 9M3 9h18v11H3zM9 20v-6h6v6" },
   { href: "/dashboard", label: "Miner", icon: "M4 20V10m6 10V4m6 16v-7m4 7H2" },
   { href: "/wallet", label: "Wallet", icon: "M3 7h15a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H3zm0 0V6a2 2 0 0 1 2-2h11M17 13.5h.01" },
 ];

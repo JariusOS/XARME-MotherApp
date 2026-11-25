@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         sans: ['"Inter Variable"', "system-ui", "sans-serif"],
         display: ['"Poppins"', '"Inter Variable"', "sans-serif"],
+        pixel: ['"Silkscreen"', "monospace"],
         mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },
     },
