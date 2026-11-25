@@ -64,10 +64,10 @@ export default function MintPage() {
   if (data) {
     if (!user) cta = { label: "Sign in with X to check eligibility", action: () => { location.href = "/api/auth/x/login"; } };
     else if (!me?.wallet) cta = { label: "Link a Solana wallet", action: () => { location.href = "/wallet"; } };
-    else if (me.atLimit) cta = { label: `${me.totalSpots}/2 spots held ✓ (max per wallet)`, disabled: true };
+    else if (me.atLimit) cta = { label: me.projectedGtd ? "Reserved ✓ · 2 spots if you hold top 33" : "Spot reserved ✓", disabled: true };
     else if (left <= 0) cta = { label: "Reserve spots sold out", disabled: true };
     else if (me.xeetNeeded > 0) cta = { label: `Need ${dec(me.xeetNeeded)} more XEET`, action: () => { location.href = "/"; } };
-    else cta = { label: busy ? "Waiting for signature…" : `Sign & reserve${me.myReserved ? " another" : ""} for ${c!.reserveCost} XEET`, action: doReserve, disabled: busy };
+    else cta = { label: busy ? "Waiting for signature…" : `Sign & reserve for ${c!.reserveCost} XEET`, action: doReserve, disabled: busy };
   }
 
   return (
@@ -85,9 +85,9 @@ export default function MintPage() {
             <>
               <div className="font-display text-xl font-bold text-mint">You are eligible</div>
               <div className="mt-1 text-sm text-muted">
-                {me.myReserved > 0 && `${me.myReserved} reserved spot${me.myReserved > 1 ? "s" : ""}. `}
+                {me.myReserved > 0 && "Reserved spot held. "}
                 {me.projectedGtd && `Projected guaranteed: you're #${me.rank} in XEET. Stay top ${c!.gtd} at the snapshot. `}
-                You hold {me.totalSpots}/2 spots (max per wallet).
+                {me.projectedGtd && me.myReserved === 0 && "You can also reserve 1 for a max of 2."}
               </div>
             </>
           ) : (
@@ -113,7 +113,7 @@ export default function MintPage() {
           ))}
         </div>
         <h1 className="mt-6 font-display text-[clamp(40px,13vw,72px)] font-bold leading-none tracking-tight">SIGNS</h1>
-        <p className="mt-2 text-[17px] text-muted"><span className="num text-ink">303</span> signs · free mint on Solana</p>
+        <p className="mt-2 text-[17px] text-muted"><span className="num text-ink">303</span> signs (#1–300 + 3 test pieces) · free mint on Solana</p>
 
         <h2 className="mt-8 flex flex-wrap items-center justify-center gap-x-3 font-display text-[clamp(24px,7.5vw,38px)] font-bold leading-tight">
           Reserve <span className="num text-brand">#{data ? Math.min(c!.reserve, data.reserved + 1) : "–"}</span> for
@@ -152,8 +152,8 @@ export default function MintPage() {
         <ol className="mt-3 list-decimal space-y-2 pl-5">
           <li>Sign in with X and link a Solana wallet. The linked wallet is where your SIGN mints.</li>
           <li>Two routes: <span className="text-ink">reserve</span> (spends 1,000 XEET per spot, no refunds) or <span className="text-ink">stack XEET</span> to finish top 33 at the snapshot (costs nothing). Reserving lowers your balance, so it can cost you a top-33 place.</li>
-          <li>Max 2 per wallet, guaranteed and reserved combined. Top holders can also reserve one.</li>
-          <li>If you end in the top 33 already holding 2 reserves, you still get 2 total; the extra guaranteed spot passes down the board.</li>
+          <li>One reserve per wallet: 2,000 XEET does not buy 2 spots.</li>
+          <li>Top-33 holders can also reserve one. That makes 2 (the max per wallet) only if they still hold a top-33 place at the snapshot; otherwise they keep just the reserve.</li>
           <li>The free mint opens at ENDGAME. You pay only Solana network fees.</li>
         </ol>
         {!data?.onchain && <p className="mt-4"><Sim>MINT PROGRAM NOT DEPLOYED</Sim> <span className="ml-1">Reservations are recorded off-chain with your wallet signature.</span></p>}

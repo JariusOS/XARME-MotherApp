@@ -23,8 +23,9 @@ export async function mintStatus(userId: string | null) {
   const projectedGtd = me.rank !== null && me.rank <= MINT.gtd;
   const myReserved = me.mine;
   const reservedSpot = myReserved > 0;
-  // Max 2 per wallet, counting a projected guaranteed spot (final at the snapshot).
-  const maxReserves = MINT.maxPerWallet - (projectedGtd ? 1 : 0);
+  // One paid reserve per wallet. A top-33 holder may also reserve; they hold 2 only if
+  // they keep their top-33 place at the snapshot.
+  const maxReserves = MINT.maxReservesPerWallet;
   const atLimit = myReserved >= maxReserves;
   const canReserve = !atLimit && reserved < MINT.reserve && xeet >= MINT.reserveCost && !!me.wallet;
   return {
@@ -57,16 +58,8 @@ export async function reserve(userId: string, username: string, nonce: string, s
 
     await q("lock table signs_reservations in share row exclusive mode");
     const [{ mine }] = await q<{ mine: number }>("select count(*)::int as mine from signs_reservations where user_id = $1", [userId]);
-    const [{ rank }] = await q<{ rank: number | null }>(
-      `select (select r.rank from (select id, rank() over (order by xeet desc, created_at asc)::int as rank from users where xeet > 0) r where r.id = $1) as rank`,
-      [userId],
-    );
-    const gtd = rank !== null && rank <= MINT.gtd ? 1 : 0;
-    if (mine + gtd >= MINT.maxPerWallet) {
-      throw new MineError(
-        gtd ? "Max 2 per wallet: you hold a projected top-33 spot plus 1 reserve." : "Max 2 per wallet reached.",
-        "already_reserved", 409,
-      );
+    if (mine >= MINT.maxReservesPerWallet) {
+      throw new MineError("One reserve per wallet. You already hold yours.", "already_reserved", 409);
     }
     const [{ n }] = await q<{ n: number }>("select count(*)::int as n from signs_reservations");
     if (n >= MINT.reserve) throw new MineError("All 250 reserve spots are taken.", "sold_out", 409);

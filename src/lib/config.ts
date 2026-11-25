@@ -31,6 +31,7 @@ export const MINT = {
   reserve: 250, // FCFS, costs reserveCost XEET
   creator: 20,
   reserveCost: 1000,
-  maxPerWallet: 2, // guaranteed + reserved spots combined
+  maxReservesPerWallet: 1, // 1 paid reserve per wallet, top-33 or not
+  maxPerWallet: 2, // only reachable as guaranteed (top 33 at snapshot) + 1 reserve
   opensAt: RULES.endgame,
 } as const;
