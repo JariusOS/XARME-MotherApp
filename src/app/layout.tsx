@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource/jetbrains-mono/700.css";
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -11,7 +13,7 @@ export const metadata: Metadata = {
   title: "Xarme Collective",
   description: "Mine social attention from viral X posts.",
 };
-export const viewport: Viewport = { themeColor: "#07080a", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#1b1311", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

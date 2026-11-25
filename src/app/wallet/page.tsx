@@ -25,15 +25,15 @@ export default function WalletPage() {
   return (
     <div className="rise space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Wallet</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">Wallet</h1>
         <p className="mt-1 text-sm text-muted">XEET and GEMA are tracked off-chain until ENDGAME. Your linked wallet is where they settle.</p>
       </div>
 
       {!me ? (
-        <a href="/api/auth/x/login" className="inline-flex h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold">Connect X first</a>
+        <a href="/api/auth/x/login" className="inline-flex h-12 items-center rounded-full bg-brand px-6 text-sm font-semibold">Connect X first</a>
       ) : (
         <>
-          <section className="rounded-2xl border border-line bg-surface p-5">
+          <section className="rounded-3xl bg-surface p-5">
             <div className="text-[11px] uppercase tracking-wider text-muted">Solana wallet</div>
             {me.wallet ? (
               <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
@@ -65,7 +65,7 @@ export default function WalletPage() {
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">System status</h2>
-        <div className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface text-sm">
+        <div className="mt-3 divide-y divide-line overflow-hidden rounded-3xl bg-surface text-sm">
           <StatusRow name="X account login" real={status?.mode.xAuth === "real"} realText="OAuth 2.0 (PKCE)" simText="Demo account, no X app configured" />
           <StatusRow name="Post metrics" real={status?.mode.xData === "real"} realText="Verified via X API v2" simText="Deterministic simulated metrics" />
           <StatusRow name="Wallet linking" real realText="ed25519 signature verified server-side" />

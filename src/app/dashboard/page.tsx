@@ -21,14 +21,14 @@ export default function Dashboard() {
       <div className="rise mx-auto max-w-sm py-20 text-center">
         <h1 className="text-2xl font-bold">Miner Dashboard</h1>
         <p className="mt-2 text-sm text-muted">Connect X to see the posts you&apos;ve mined.</p>
-        <a href="/api/auth/x/login" className="mt-6 inline-flex h-11 items-center rounded-xl bg-brand px-6 text-sm font-semibold">Connect X</a>
+        <a href="/api/auth/x/login" className="mt-6 inline-flex h-12 items-center rounded-full bg-brand px-6 text-sm font-semibold">Connect X</a>
       </div>
     );
   }
 
   return (
     <div className="rise">
-      <h1 className="text-2xl font-bold tracking-tight">Miner Dashboard</h1>
+      <h1 className="font-display text-3xl font-bold tracking-tight">Miner Dashboard</h1>
       <p className="mt-1 text-sm text-muted">Impressions re-tracked every 6 hours. XEET is locked at the moment of mining.</p>
 
       <div className="mt-5 grid grid-cols-2 gap-2 lg:grid-cols-4">
@@ -41,14 +41,14 @@ export default function Dashboard() {
       <div className="mt-8">
         {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-surface" />}
         {data && data.mines.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-line p-10 text-center text-sm text-muted">
+          <div className="rounded-3xl border border-dashed border-line p-10 text-center text-sm text-muted">
             No mines yet. Head to <a href="/" className="text-ink underline">Discover</a>.
           </div>
         )}
 
         {/* desktop table */}
         {data && data.mines.length > 0 && (
-          <div className="hidden overflow-hidden rounded-2xl border border-line lg:block">
+          <div className="hidden overflow-hidden rounded-3xl bg-surface lg:block">
             <table className="w-full text-sm">
               <thead className="bg-surface text-left text-[11px] uppercase tracking-wider text-muted">
                 <tr>
@@ -88,7 +88,7 @@ export default function Dashboard() {
         {/* mobile cards */}
         <div className="space-y-2 lg:hidden">
           {data?.mines.map((m) => (
-            <article key={m.tweetId} className="rounded-2xl border border-line bg-surface p-4">
+            <article key={m.tweetId} className="rounded-3xl bg-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <a href={`https://x.com/${m.author}/status/${m.tweetId}`} target="_blank" rel="noreferrer" className="font-medium">@{m.author}</a>

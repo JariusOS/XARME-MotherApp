@@ -47,11 +47,11 @@ r = await login(a);
 assert(r.status === 200, "wallet linked with valid signature");
 
 r = await a.post("/api/lookup", { url: `https://x.com/someone/status/${feed[0].id}` });
-assert(r.j.post.eligible && r.j.post.xeet === Math.floor(feed[0].impressions / 1e6 * 1e4) / 1e4, "lookup parses URL, XEET = impressions/1M");
+assert(r.j.post.eligible && r.j.post.xeet === Math.floor(r.j.post.impressions / 1e6 * 1e4) / 1e4, "lookup parses URL, XEET = impressions/1M");
 
 r = await a.post("/api/mine", { tweetId: feed[0].id });
 assert(r.status === 200 && r.j.minesToday === 1, `mined #1: +${r.j.xeet} XEET, +${r.j.gema} GEMA`);
-assert(r.j.gema === Math.floor(feed[0].likes / 1e4 * 1e4) / 1e4, "GEMA = likes/10k");
+assert(r.j.gema === Math.floor(r.j.post.likes / 1e4 * 1e4) / 1e4, "GEMA = likes/10k");
 r = await a.post("/api/mine", { tweetId: feed[0].id });
 assert(r.status === 409, "same post cannot be mined twice");
 

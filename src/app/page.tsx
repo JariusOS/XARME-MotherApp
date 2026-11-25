@@ -1,119 +1,154 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useSWR, { mutate } from "swr";
-import LinkWallet from "@/components/LinkWallet";
+import LiveLine from "@/components/LiveLine";
 import Receipt, { type MineResult } from "@/components/Receipt";
+import Segmented from "@/components/Segmented";
 import { ago, compact, dec, hms, untilUtcMidnight } from "@/components/format";
 import { post, useMe } from "@/components/hooks";
-import { Button, Gema, Logo, Sim, Xeet } from "@/components/ui";
+import { Gema, Sim, Xeet } from "@/components/ui";
 
 type Post = {
   id: string; text: string; authorUsername: string; authorName: string; postedAt: string;
   impressions: number; likes: number; xeet: number; gema: number; minedBy: string | null;
   source: string; eligible?: boolean;
 };
+type Sort = "top" | "fresh" | "open";
+
+const TILE = ["#0f172a", "#0f766e", "#7c2d12", "#312e81", "#14532d", "#4a044e", "#1e3a8a", "#713f12"];
 
 export default function Discover() {
   const { data: meData } = useMe();
   const me = meData?.user;
-  const { data, error, isLoading } = useSWR<{ posts: Post[] }>("/api/discover");
+  const { data, error, isLoading } = useSWR<{ posts: Post[] }>("/api/discover", { refreshInterval: 30_000 });
+  const [sort, setSort] = useState<Sort>("top");
+  const [rank, setRank] = useState(1);
   const [url, setUrl] = useState("");
-  const [looked, setLooked] = useState<Post | null>(null);
-  const [lookErr, setLookErr] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [mineErr, setMineErr] = useState<{ id: string; msg: string } | null>(null);
+  const [checked, setChecked] = useState<Post | null>(null);
+  const [msg, setMsg] = useState<{ tone: "err" | "ok"; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<MineResult | null>(null);
   const [left, setLeft] = useState(untilUtcMidnight());
   useEffect(() => { const t = setInterval(() => setLeft(untilUtcMidnight()), 1000); return () => clearInterval(t); }, []);
 
+  const list = useMemo(() => {
+    const ps = [...(data?.posts ?? [])];
+    if (sort === "fresh") ps.sort((a, b) => +new Date(b.postedAt) - +new Date(a.postedAt));
+    else ps.sort((a, b) => b.xeet - a.xeet);
+    return sort === "open" ? ps.filter((p) => !p.minedBy) : ps;
+  }, [data, sort]);
+  const open = list.filter((p) => !p.minedBy);
+  const n = Math.min(Math.max(1, rank), Math.max(1, open.length));
+  const target = checked ?? open[n - 1] ?? null;
+
   const remaining = me ? me.dailyMines - me.minesToday : 3;
-  const canMine = !!me && !!me.wallet && remaining > 0;
+  const blocked = !me ? "Sign in with X to mine" : !me.wallet ? "Link a wallet to mine" : remaining <= 0 ? "No mines left today" : null;
 
-  async function lookup(e: React.FormEvent) {
-    e.preventDefault();
-    setLookErr(null); setLooked(null);
-    try { setLooked((await post<{ post: Post }>("/api/lookup", { url })).post); }
-    catch (e) { setLookErr((e as Error).message); }
-  }
-
-  async function mine(id: string) {
-    setBusyId(id); setMineErr(null);
+  async function check() {
+    setMsg(null);
     try {
-      const r = await post<MineResult>("/api/mine", { tweetId: id });
-      setReceipt(r);
-      if (looked?.id === id) setLooked({ ...looked, minedBy: me!.username });
-      mutate("/api/me"); mutate("/api/discover"); mutate("/api/dashboard");
-    } catch (e) {
-      setMineErr({ id, msg: (e as Error).message });
-      mutate("/api/discover");
-    } finally { setBusyId(null); }
+      const { post: p } = await post<{ post: Post }>("/api/lookup", { url });
+      setChecked(p);
+      if (p.minedBy) setMsg({ tone: "err", text: `Already mined by @${p.minedBy}.` });
+      else if (!p.eligible) setMsg({ tone: "err", text: `Only ${compact(p.impressions)} impressions. Needs 1M+.` });
+    } catch (e) { setChecked(null); setMsg({ tone: "err", text: (e as Error).message }); }
   }
 
-  const action = (p: Post) => {
-    if (p.minedBy) return <span className="text-xs text-muted">Mined by <span className="text-ink">@{p.minedBy}</span></span>;
-    if (p.eligible === false) return <span className="text-xs text-loss">Under 1M impressions</span>;
-    if (!me) return <a href="/api/auth/x/login" className="text-xs font-semibold text-brand-2">Connect X to mine</a>;
-    return (
-      <Button onClick={() => mine(p.id)} disabled={!canMine || busyId !== null} className="h-9 px-5">
-        {busyId === p.id ? "Mining…" : "Mine"}
-      </Button>
-    );
-  };
+  async function mine(p: Post) {
+    if (!me) { location.href = "/api/auth/x/login"; return; }
+    setBusy(true); setMsg(null);
+    try {
+      const r = await post<MineResult>("/api/mine", { tweetId: p.id });
+      setReceipt(r); setChecked(null); setUrl("");
+      mutate("/api/me"); mutate("/api/discover"); mutate("/api/stats"); mutate("/api/dashboard");
+    } catch (e) {
+      setMsg({ tone: "err", text: (e as Error).message });
+      mutate("/api/discover");
+    } finally { setBusy(false); }
+  }
+
+  const ctaLabel = busy ? "Mining…" : url.trim() && !checked ? "Check post" : blocked ?? (target ? "Mine it" : "Nothing to mine");
+  const ctaDisabled = busy || (!url.trim() && (!target || (!!blocked && !!me)))
+    || (!!checked && (!!checked.minedBy || checked.eligible === false));
 
   return (
     <div className="rise">
-      <section className="glow -mx-4 px-4 pb-6 pt-2">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Mine attention.</h1>
-        <p className="mt-2 max-w-md text-sm text-muted">
-          Find an X post with 1M+ impressions. Be first. Extract <span className="text-ink">1 XEET</span> per million
-          impressions and <span className="text-ink">1 GEMA</span> per 10,000 likes, as of the moment you mine.
-        </p>
+      <LiveLine />
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
-          <form onSubmit={lookup} className="flex gap-2">
-            <input
-              value={url} onChange={(e) => setUrl(e.target.value)}
-              placeholder="Paste an x.com post link"
-              className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 text-sm outline-none placeholder:text-faint focus:border-brand"
-            />
-            <Button type="submit" variant="ghost" disabled={!url.trim()}>Check</Button>
-          </form>
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-line bg-surface px-4 py-2 sm:justify-start">
-            <div className="flex gap-1.5" aria-label={`${remaining} of 3 mines left today`}>
-              {[0, 1, 2].map((i) => (
-                <span key={i} className={`h-2.5 w-6 rounded-full ${i < remaining ? "bg-brand" : "bg-line"}`} />
-              ))}
-            </div>
-            <div className="text-xs text-muted"><span className="num text-ink">{remaining}</span> left · resets <span className="num">{hms(left)}</span></div>
-          </div>
+      <div className="mt-6">
+        <Segmented<Sort> value={sort} onChange={(v) => { setSort(v); setRank(1); }}
+          options={[
+            { id: "top", label: "Top", icon: <TrophyIcon /> },
+            { id: "fresh", label: "Fresh" },
+            { id: "open", label: "Unclaimed", tone: "live" },
+          ]} />
+      </div>
+
+      {/* headline, outbid's "Claim #1 for $X" */}
+      <section className="mt-8 text-center">
+        <h1 className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-display text-[clamp(28px,8.5vw,44px)] font-bold leading-tight tracking-tight">
+          {checked ? <span>Mine this for</span> : (
+            <span className="flex items-center gap-2">
+              Mine
+              <Stepper dir={-1} disabled={n <= 1} onClick={() => setRank(n - 1)} />
+              <span className="num">#{n}</span>
+              <Stepper dir={1} disabled={n >= open.length} onClick={() => setRank(n + 1)} />
+              for
+            </span>
+          )}
+          <span className="num text-brand">{target ? `+${dec(target.xeet)}` : "—"}</span>
+          <span className="text-brand">XEET</span>
+        </h1>
+        {target && (
+          <p className="mt-2 text-sm text-muted">
+            from @{target.authorUsername} · plus <span className="text-ink">{dec(target.gema)} GEMA</span>
+          </p>
+        )}
+
+        <form className="mt-6 space-y-3" onSubmit={(e) => { e.preventDefault(); if (url.trim() && !checked) check(); else if (target) mine(target); }}>
+          <label className="flex h-16 items-center gap-3 rounded-full border border-line bg-bg px-5 focus-within:border-brand">
+            <svg viewBox="0 0 24 24" className="h-6 w-6 flex-none text-muted" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18" />
+            </svg>
+            <input value={url} onChange={(e) => { setUrl(e.target.value); setChecked(null); setMsg(null); }}
+              placeholder="Paste any X post URL"
+              className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-faint" />
+            {url && <button type="button" onClick={() => { setUrl(""); setChecked(null); setMsg(null); }} className="text-sm text-muted">Clear</button>}
+          </label>
+          <button type="submit" disabled={ctaDisabled}
+            className="h-16 w-full rounded-full bg-brand font-display text-xl font-semibold text-white transition hover:bg-brand-2 active:scale-[.99] disabled:bg-brand-dim disabled:text-white/50">
+            {ctaLabel}
+          </button>
+        </form>
+
+        {msg && <p className={`mt-3 text-sm ${msg.tone === "err" ? "text-loss" : "text-mint"}`}>{msg.text}</p>}
+
+        <div className="mt-4 flex items-center justify-center gap-3 text-sm text-muted">
+          <span className="flex gap-1">{[0, 1, 2].map((i) => <span key={i} className={`h-2 w-5 rounded-full ${i < remaining ? "bg-brand" : "bg-line"}`} />)}</span>
+          <span><span className="num text-ink">{remaining}</span>/3 mines left · resets <span className="num">{hms(left)}</span></span>
         </div>
-
-        {me && !me.wallet && (
-          <div className="mt-3 flex flex-col items-start gap-3 rounded-xl border border-brand/40 bg-brand/10 p-4 sm:flex-row sm:items-center">
-            <p className="flex-1 text-sm">Link a Solana wallet to start mining. It&apos;s your identity on the ENDGAME board.</p>
-            <LinkWallet compact />
-          </div>
-        )}
-
-        {lookErr && <p className="mt-3 text-sm text-loss">{lookErr}</p>}
-        {looked && (
-          <div className="mt-4"><PostRow p={looked} action={action(looked)} highlight err={mineErr?.id === looked.id ? mineErr.msg : null} /></div>
-        )}
       </section>
 
-      <section className="mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted">Eligible now</h2>
+      {checked && (
+        <div className="mt-8">
+          <Card p={checked} rank={null} selected onMine={() => mine(checked)} canMine={!blocked && !busy} />
+        </div>
+      )}
+
+      {/* ranked list */}
+      <section className="mt-10 space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="font-display text-lg font-semibold">Posts over 1M impressions</h2>
           {data?.posts[0]?.source === "simulated" && <Sim>SIMULATED FEED</Sim>}
         </div>
-        {isLoading && <div className="space-y-2">{[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-surface" />)}</div>}
+        {isLoading && [0, 1, 2].map((i) => <div key={i} className="h-32 animate-pulse rounded-3xl bg-surface" />)}
         {error && <p className="text-sm text-loss">{error.message}</p>}
-        {data && data.posts.length === 0 && <p className="text-sm text-muted">No eligible posts right now. Paste one above.</p>}
-        <div className="space-y-2">
-          {data?.posts.map((p) => (
-            <PostRow key={p.id} p={p} action={action(p)} err={mineErr?.id === p.id ? mineErr.msg : null} />
-          ))}
-        </div>
+        {list.map((p, i) => (
+          <Card key={p.id} p={p} rank={i + 1} selected={!checked && target?.id === p.id}
+            onSelect={() => { if (!p.minedBy) { setChecked(null); setRank(open.findIndex((o) => o.id === p.id) + 1); window.scrollTo({ top: 0, behavior: "smooth" }); } }}
+            onMine={() => mine(p)} canMine={!blocked && !busy} />
+        ))}
+        {data && list.length === 0 && <p className="py-10 text-center text-sm text-muted">Nothing here yet. Paste a post above.</p>}
       </section>
 
       {receipt && <Receipt r={receipt} onClose={() => setReceipt(null)} />}
@@ -121,33 +156,64 @@ export default function Discover() {
   );
 }
 
-function PostRow({ p, action, highlight, err }: { p: Post; action: React.ReactNode; highlight?: boolean; err?: string | null }) {
+function Card({ p, rank, selected, onSelect, onMine, canMine }: {
+  p: Post; rank: number | null; selected?: boolean; onSelect?: () => void; onMine: () => void; canMine: boolean;
+}) {
+  const tile = TILE[parseInt(p.id.slice(-3), 10) % TILE.length];
   return (
-    <article className={`rounded-2xl border bg-surface p-4 transition ${highlight ? "border-brand/60" : "border-line hover:border-faint"} ${p.minedBy ? "opacity-60" : ""}`}>
-      <div className="flex items-start gap-3">
-        <div className="grid h-9 w-9 flex-none place-items-center rounded-full bg-raised"><Logo className="h-4 w-4 text-muted" /></div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2 text-sm">
-            <span className="truncate font-semibold">{p.authorName}</span>
-            <span className="truncate text-muted">@{p.authorUsername}</span>
-            <span className="ml-auto flex-none text-xs text-faint">{ago(p.postedAt)}</span>
-          </div>
-          <a href={`https://x.com/${p.authorUsername}/status/${p.id}`} target="_blank" rel="noreferrer"
-            className="mt-1 line-clamp-2 block text-sm text-ink/90 hover:underline">{p.text}</a>
-          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Metric label="Views" value={compact(p.impressions)} />
-            <Metric label="Likes" value={compact(p.likes)} />
-            <span className="flex items-center gap-1.5"><Xeet className="h-4 w-4" /><span className="num text-sm font-bold text-mint">+{dec(p.xeet)}</span></span>
-            <span className="flex items-center gap-1.5"><Gema className="h-4 w-4" /><span className="num text-sm font-bold">+{dec(p.gema)}</span></span>
-            <div className="ml-auto">{action}</div>
-          </div>
-          {err && <p className="mt-2 text-xs text-loss">{err}</p>}
+    <article onClick={onSelect}
+      className={`flex cursor-pointer gap-4 rounded-3xl p-4 transition ${selected ? "bg-raised ring-2 ring-brand" : "bg-surface hover:bg-raised"} ${p.minedBy ? "opacity-60" : ""}`}>
+      <div className="grid h-16 w-16 flex-none place-items-center rounded-2xl font-display text-2xl font-bold text-white" style={{ background: tile }}>
+        {p.authorName.slice(0, 1).toUpperCase()}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <h3 className="min-w-0 flex-1 truncate font-display text-[17px] font-semibold">
+            {rank !== null && <span className="mr-1.5 text-brand">#{rank}</span>}
+            {p.authorName} <span className="font-normal text-muted">@{p.authorUsername}</span>
+          </h3>
+          <span className="num flex-none font-display text-[17px] font-bold text-brand">+{dec(p.xeet)}</span>
+        </div>
+        <p className="mt-0.5 truncate text-[15px] text-muted">{p.text}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+          <span className="flex items-center gap-1 text-ink"><Xeet className="h-4 w-4" />{compact(p.impressions)} views</span>
+          <span>·</span>
+          <span className="flex items-center gap-1"><Gema className="h-4 w-4" />+{dec(p.gema)}</span>
+          <span>·</span>
+          <span>{ago(p.postedAt)}</span>
+          <span>·</span>
+          <a href={`https://x.com/${p.authorUsername}/status/${p.id}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-ink hover:underline">see post</a>
+          <span className="ml-auto">
+            {p.minedBy ? (
+              <span>Mined by <span className="text-ink">@{p.minedBy}</span></span>
+            ) : p.eligible === false ? (
+              <span className="text-loss">Under 1M</span>
+            ) : (
+              <button onClick={(e) => { e.stopPropagation(); onMine(); }} disabled={!canMine}
+                className="rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-2 disabled:bg-brand-dim disabled:text-white/50">
+                Mine
+              </button>
+            )}
+          </span>
         </div>
       </div>
     </article>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return <span className="text-xs text-muted">{label} <span className="num text-sm text-ink">{value}</span></span>;
+function Stepper({ dir, disabled, onClick }: { dir: 1 | -1; disabled?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} aria-label={dir > 0 ? "Next target" : "Previous target"}
+      className="grid h-10 w-10 place-items-center rounded-full bg-brand-dim/70 text-xl font-bold text-brand-2 transition hover:bg-brand-dim disabled:opacity-30">
+      {dir > 0 ? "+" : "−"}
+    </button>
+  );
+}
+
+function TrophyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 3M17 6h3a3 3 0 0 1-3 3" />
+    </svg>
+  );
 }

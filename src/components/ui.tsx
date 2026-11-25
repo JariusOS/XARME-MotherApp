@@ -55,7 +55,7 @@ export function Sim({ children = "SIMULATED" }: { children?: ReactNode }) {
 
 export function Stat({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: ReactNode; tone?: "loss" | "mint" }) {
   return (
-    <div className="rounded-xl border border-line bg-surface p-3.5">
+    <div className="rounded-3xl bg-surface p-4">
       <div className="text-[11px] uppercase tracking-wider text-muted">{label}</div>
       <div className={`num mt-1.5 text-lg font-bold ${tone === "loss" ? "text-loss" : tone === "mint" ? "text-mint" : ""}`}>{value}</div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
@@ -69,10 +69,10 @@ export function Button({
   children: ReactNode; onClick?: () => void; disabled?: boolean; variant?: "primary" | "ghost";
   className?: string; type?: "button" | "submit";
 }) {
-  const base = "inline-flex items-center justify-center gap-2 rounded-xl px-4 h-11 text-sm font-semibold transition active:scale-[.98] disabled:opacity-40 disabled:active:scale-100";
+  const base = "inline-flex items-center justify-center gap-2 rounded-full px-5 h-11 text-sm font-semibold transition active:scale-[.98] disabled:opacity-40 disabled:active:scale-100";
   const v = variant === "primary"
-    ? "bg-brand text-white hover:bg-brand-2 shadow-[0_8px_24px_rgba(26,43,255,.35)]"
-    : "border border-line bg-raised text-ink hover:border-faint";
+    ? "bg-brand text-white hover:bg-brand-2"
+    : "bg-surface text-ink hover:bg-raised";
   return (
     <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${v} ${className}`}>
       {children}

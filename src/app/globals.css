@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 :root { color-scheme: dark; }
-html, body { background: #07080a; color: #e8ebef; }
+html, body { background: #1b1311; color: #f5ede9; }
 body { -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
 .num { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-.glow { background: radial-gradient(60% 50% at 50% 0%, rgba(26,43,255,.22), transparent 70%); }
+.glow { background: radial-gradient(60% 50% at 50% 0%, rgba(232,115,90,.10), transparent 70%); }
 @keyframes rise { from { opacity: 0; transform: translateY(8px) } }
 .rise { animation: rise .35s ease both; }
 @media (prefers-reduced-motion: reduce) { .rise { animation: none } }
-.wallet-adapter-button-trigger { background: #1a2bff !important; }
+.wallet-adapter-button-trigger { background: #e8735a !important; }
+@keyframes pulse-dot { 50% { opacity: .35 } }
+.live-dot { animation: pulse-dot 1.6s ease-in-out infinite; }

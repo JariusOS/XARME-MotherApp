@@ -21,11 +21,11 @@ export default function Receipt({ r, onClose }: { r: MineResult; onClose: () => 
   const shareText = `Just mined ${dec(r.xeet, 4)} XEET from @${r.post.authorUsername}'s post on Xarme Collective.`;
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Mining receipt" className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:items-center" onClick={onClose}>
-      <div className="rise relative w-full max-w-sm overflow-hidden rounded-3xl bg-[#151515]" onClick={(e) => e.stopPropagation()}>
-        <div className="pointer-events-none absolute -bottom-24 left-1/2 h-64 w-[130%] -translate-x-1/2 rounded-full bg-brand/60 blur-3xl" />
+      <div className="rise relative w-full max-w-sm overflow-hidden rounded-3xl bg-surface" onClick={(e) => e.stopPropagation()}>
+        <div className="pointer-events-none absolute -bottom-24 left-1/2 h-64 w-[130%] -translate-x-1/2 rounded-full bg-brand/35 blur-3xl" />
         <div className="relative p-5">
-          <div className="relative overflow-hidden rounded-2xl border border-faint bg-black p-4">
-            <div className="absolute -right-10 top-5 w-40 rotate-45 bg-red-600 py-1 text-center text-xs font-black text-white">Mined</div>
+          <div className="relative overflow-hidden rounded-2xl bg-bg p-4">
+            <div className="absolute -right-10 top-5 w-40 rotate-45 bg-brand py-1 text-center text-xs font-black text-white">Mined</div>
             <div className="text-sm font-semibold">{r.post.authorName}</div>
             <div className="text-xs text-muted">@{r.post.authorUsername}</div>
             <p className="mt-3 line-clamp-4 pr-6 text-sm leading-relaxed">{r.post.text}</p>

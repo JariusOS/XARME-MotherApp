@@ -4,12 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#07080a", surface: "#0e1013", raised: "#14171b", line: "#1d2126",
-        ink: "#e8ebef", muted: "#7c848f", faint: "#4a5059",
-        brand: "#010AFC", "brand-2": "#3b4bff", mint: "#5ef0c0", "mint-dim": "#1d4d3f", loss: "#ff6b6b", gold: "#f5c451",
+        bg: "#1b1311", surface: "#2a1c18", raised: "#35241f", line: "#3d2b26",
+        ink: "#f5ede9", muted: "#a8948e", faint: "#6e5b55",
+        brand: "#e8735a", "brand-2": "#f08a72", "brand-dim": "#7c3a2c",
+        mint: "#4ade80", "mint-dim": "#1f4a32", loss: "#ff7a6b", gold: "#f5c451",
       },
       fontFamily: {
         sans: ['"Inter Variable"', "system-ui", "sans-serif"],
+        display: ['"Poppins"', '"Inter Variable"', "sans-serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "monospace"],
       },
     },
