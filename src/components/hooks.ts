@@ -6,7 +6,7 @@ export type Me = {
   xeet: number; gema: number; simulated: boolean; minesToday: number; dailyMines: number;
 };
 export type Status = {
-  mode: { xAuth: "real" | "simulated"; xData: "real" | "simulated"; database: "postgres" | "embedded" };
+  mode: { xAuth: "real" | "simulated"; xData: "real" | "simulated"; database: "postgres" | "embedded" | "ephemeral" };
 };
 
 export const useMe = () => useSWR<{ user: Me | null }>("/api/me");

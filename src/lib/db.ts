@@ -66,7 +66,8 @@ async function connect(): Promise<Db> {
     return { q: wrap(sql as unknown as Unsafe), tx: (fn) => sql.begin((t) => fn(wrap(t as unknown as Unsafe))) as never };
   }
   const { PGlite } = await import("@electric-sql/pglite");
-  const dir = join(process.cwd(), ".data", "pglite");
+  // Vercel functions only allow writes to /tmp; data there is lost when the instance recycles.
+  const dir = process.env.VERCEL ? "/tmp/xarme-pglite" : join(process.cwd(), ".data", "pglite");
   mkdirSync(dir, { recursive: true });
   const pg = new PGlite(dir);
   type Queryable = { query: (t: string, p?: unknown[]) => Promise<{ rows: unknown[] }> };

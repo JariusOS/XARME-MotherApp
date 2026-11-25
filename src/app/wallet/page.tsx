@@ -70,7 +70,7 @@ export default function WalletPage() {
           <StatusRow name="Post metrics" real={status?.mode.xData === "real"} realText="Verified via X API v2" simText="Deterministic simulated metrics" />
           <StatusRow name="Wallet linking" real realText="ed25519 signature verified server-side" />
           <StatusRow name="SOL balance" real realText={`Solana RPC`} />
-          <StatusRow name="Database" real realText={status?.mode.database === "postgres" ? "Postgres" : "Embedded Postgres (local)"} />
+          <StatusRow name="Database" real={status?.mode.database !== "ephemeral"} realText={status?.mode.database === "postgres" ? "Postgres" : "Embedded Postgres (local)"} simText="Temporary: resets when the server restarts" />
           <StatusRow name="On-chain XEET/GEMA" real={false} simText="Off-chain ledger; settlement not built" />
         </div>
         {me?.wallet && <p className="mt-2 text-xs text-faint">Linked: {short(me.wallet, 6)}</p>}

@@ -2,7 +2,7 @@
 export const mode = {
   xAuth: process.env.X_CLIENT_ID ? "real" : "simulated",
   xData: process.env.X_BEARER_TOKEN ? "real" : "simulated",
-  database: process.env.DATABASE_URL ? "postgres" : "embedded",
+  database: process.env.DATABASE_URL ? "postgres" : process.env.VERCEL ? "ephemeral" : "embedded",
 } as const;
 
 export const RULES = {

@@ -28,7 +28,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const { data: status } = useStatus();
   const { setVisible } = useWalletModal();
   const me = data?.user;
-  const simulated = status && (status.mode.xAuth === "simulated" || status.mode.xData === "simulated");
+  const simulated = status && (status.mode.xAuth === "simulated" || status.mode.xData === "simulated" || status.mode.database === "ephemeral");
 
   return (
     <div className="min-h-dvh">
@@ -36,7 +36,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="border-b border-gold/20 bg-gold/[.06] px-4 py-1.5 text-center text-[11px] text-gold">
           Preview mode: {status!.mode.xAuth === "simulated" && "X login"}
           {status!.mode.xAuth === "simulated" && status!.mode.xData === "simulated" && " and "}
-          {status!.mode.xData === "simulated" && "post metrics"} are simulated. See Wallet → System status.
+          {status!.mode.xData === "simulated" && "post metrics"} are simulated{status!.mode.database === "ephemeral" && "; data is temporary and may reset"}. See Wallet → System status.
         </div>
       )}
       <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur">
